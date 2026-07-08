@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bi-primary: #1F4E79;
+  --color-bi-secondary: #3949AB;
+  --color-bi-accent: #1976D2;
+  --color-bi-success: #2E7D32;
+  --color-bi-warning: #F9A825;
+  --color-bi-critical: #C62828;
+  --color-bi-info: #0288D1;
+  --color-bi-bg: #F5F7FA;
+  --color-bi-card: #FFFFFF;
+  --color-bi-text-primary: #1F2937;
+  --color-bi-text-secondary: #6B7280;
+  --color-bi-border: #E5E7EB;
+
+  --color-bi-dark-bg: #121212;
+  --color-bi-dark-card: #1E1E1E;
+  --color-bi-dark-border: #2D2D2D;
+  --color-bi-dark-text-primary: #FFFFFF;
+  --color-bi-dark-text-secondary: #A0AEC0;
+
+  --font-sans: "Inter", "Segoe UI", "Roboto", ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-bi-bg);
+    color: var(--color-bi-text-primary);
+  }
+
+  /* Custom scrollbar styling for clean corporate visual tables */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #cbd5e1;
+    border-radius: 4px;
+  }
+  .dark ::-webkit-scrollbar-thumb {
+    background: #475569;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+  }
+}

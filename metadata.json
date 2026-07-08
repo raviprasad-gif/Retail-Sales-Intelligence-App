@@ -1,0 +1,6 @@
+{
+  "name": "Retail Sales Intelligence App",
+  "description": "An AI-assisted business intelligence dashboard allowing retail business users to merge, analyze, filter, and model sales and store master datasets using rich interactive KPI metrics, visualizations, and automated strategic insights.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

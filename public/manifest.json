@@ -1,0 +1,24 @@
+{
+  "short_name": "Retail BI",
+  "name": "Retail Sales Intelligence Console",
+  "description": "An enterprise-grade, browser-based Business Intelligence console for retail sales and supply chain analysis.",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#121212",
+  "theme_color": "#1F4E79",
+  "display": "standalone",
+  "orientation": "any"
+}
