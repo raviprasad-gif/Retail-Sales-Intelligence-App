@@ -153,6 +153,9 @@ export function tryParseDate(val: any): { isValid: boolean; formatted?: string }
   const t = Date.parse(str);
   if (!isNaN(t)) {
     const dateObj = new Date(t);
+    // Use local time because Date.parse without timezone assumes local for non-ISO, 
+    // and we want to preserve the day the user meant.
+    // However, to be absolutely safe against timezone shifts, we extract parts:
     const y = dateObj.getFullYear();
     const mStr = String(dateObj.getMonth() + 1).padStart(2, "0");
     const dStr = String(dateObj.getDate()).padStart(2, "0");
@@ -532,10 +535,22 @@ export function mergeDatasets(
     }
 
     const lookupKey = getLookupKey(storeId);
-    const store = storeMap.get(lookupKey);
+    let store = storeMap.get(lookupKey);
+    
+    // Fallback: If store master doesn't have it, but the sales file is a flat denormalized file with store_name and region, we accept it.
     if (!store) {
-      errors.push(`Sales row ${idx + 2} contains store_id "${storeId}" which doesn't exist in store_master.xlsx.`);
-      return;
+      if (sale["store_name"] && sale["region"]) {
+        store = {
+          store_id: storeId,
+          store_name: sale["store_name"],
+          region: sale["region"],
+          city: sale["city"] || "Unknown",
+          store_format: sale["store_format"] || "Standard"
+        };
+      } else {
+        errors.push(`Sales row ${idx + 2} contains store_id "${storeId}" which doesn't exist in store_master.xlsx and lacks inline store details.`);
+        return;
+      }
     }
 
     // Capture standard metric values

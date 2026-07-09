@@ -6,6 +6,15 @@
 import { MergedRetailRow, KPIStats } from "../types";
 import { formatCurrency, formatPercent } from "./excel";
 
+export interface ExecutiveInsight {
+  title: string;
+  severity: "Critical" | "High" | "Medium" | "Low";
+  businessImpact: string;
+  supportingMetrics: string;
+  recommendation: string;
+  confidenceLevel: string;
+}
+
 export interface AnalyticsSummary {
   bestRegion: { name: string; sales: number };
   worstRegion: { name: string; sales: number };
@@ -19,8 +28,8 @@ export interface AnalyticsSummary {
   largestOpportunity: string;
   recommendations: string[];
   executiveSummary: string;
-  trends: string[];
-  anomalies: string[];
+  trends: ExecutiveInsight[];
+  anomalies: ExecutiveInsight[];
   targetMissExplanation: string;
 }
 
@@ -42,8 +51,22 @@ export function calculateAnalyticalSummary(rows: MergedRetailRow[], overallStats
       largestOpportunity: "No data available to identify sales opportunities.",
       recommendations: ["Upload retail sales and store master data to generate strategic recommendations."],
       executiveSummary: "Please upload your sales and store data files to generate a comprehensive BI consultant executive summary.",
-      trends: ["No data loaded. Please upload datasets to analyze structural growth trends."],
-      anomalies: ["No anomalies can be identified without active dataset segments."],
+      trends: [{
+        title: "No Data Loaded",
+        severity: "Low",
+        businessImpact: "Unable to analyze structural growth trends.",
+        supportingMetrics: "0 active records.",
+        recommendation: "Upload dataset to begin trend analysis.",
+        confidenceLevel: "N/A"
+      }],
+      anomalies: [{
+        title: "No Data Loaded",
+        severity: "Low",
+        businessImpact: "Unable to identify operational anomalies.",
+        supportingMetrics: "0 active records.",
+        recommendation: "Upload dataset to begin anomaly detection.",
+        confidenceLevel: "N/A"
+      }],
       targetMissExplanation: "No active target deficit evaluations can be performed without loaded sales targets."
     };
   }
@@ -251,26 +274,61 @@ export function calculateAnalyticalSummary(rows: MergedRetailRow[], overallStats
   const executiveSummary = `${execSummaryPar1}\n\n${execSummaryPar2}\n\n${execSummaryPar3}`;
 
   // Calculate detailed Trends
-  const trends: string[] = [];
+  const trends: ExecutiveInsight[] = [];
   const avgWeeklySales = weeklyTrend.reduce((sum, w) => sum + w.sales, 0) / (weeklyTrend.length || 1);
   const avgWeeklyGrowth = weeklyTrend.length > 1
     ? weeklyTrend.slice(1).reduce((sum, w) => sum + w.growthRate, 0) / (weeklyTrend.length - 1)
     : 0;
 
-  trends.push(`**Growth & Revenue Trajectory**: Sales analyzed across **${weeklyTrend.length}** distinct weeks demonstrate an average weekly baseline of **${formatCurrency(avgWeeklySales)}**, with an average period-over-period growth velocity of **${avgWeeklyGrowth.toFixed(2)}%**.`);
+  trends.push({
+    title: "Growth & Revenue Trajectory",
+    severity: "Low",
+    businessImpact: `Sales analyzed across ${weeklyTrend.length} weeks demonstrate a stable revenue baseline.`,
+    supportingMetrics: `${formatCurrency(avgWeeklySales)} avg weekly sales with ${avgWeeklyGrowth.toFixed(2)}% period-over-period growth.`,
+    recommendation: "Continue monitoring to ensure growth velocity outpaces regional inflation metrics.",
+    confidenceLevel: "High"
+  });
   
   if (overallStats.conversionRate < 1.5) {
-    trends.push(`**Traffic-to-Purchase Bottleneck**: The conversion efficiency of **${overallStats.conversionRate.toFixed(2)}%** is structurally low. This highlights an inability to fully capitalize on organic footfall, pointing to potential issues with pricing, localized store design, or staff availability.`);
+    trends.push({
+      title: "Traffic-to-Purchase Bottleneck",
+      severity: "High",
+      businessImpact: "Low conversion efficiency highlights an inability to capitalize on organic footfall.",
+      supportingMetrics: `${overallStats.conversionRate.toFixed(2)}% conversion rate across all tracked periods.`,
+      recommendation: "Investigate localized store design, pricing competitiveness, or staff availability.",
+      confidenceLevel: "High"
+    });
   } else {
-    trends.push(`**Traffic-to-Purchase Conversion**: Store footfall conversion is currently operating at a healthy **${overallStats.conversionRate.toFixed(2)}%** rate. This indicates solid customer intent, strong local layout flow, and effective visual merchandising.`);
+    trends.push({
+      title: "Traffic-to-Purchase Conversion",
+      severity: "Low",
+      businessImpact: "Store footfall conversion is operating at a healthy rate.",
+      supportingMetrics: `${overallStats.conversionRate.toFixed(2)}% overall conversion efficiency.`,
+      recommendation: "Leverage top-performing store layouts as templates for underperforming regions.",
+      confidenceLevel: "High"
+    });
   }
 
-  trends.push(`**Promo Elasticity & Margin Impact**: Promotional discounts average **${overallStats.discountRate.toFixed(2)}%** across all products, supporting an average transaction value of **${formatCurrency(overallStats.avgTransactionValue)}**. Continuing to rely heavily on discount-driven traffic risks permanently anchoring customer price expectations and compressing margin profiles.`);
+  trends.push({
+    title: "Promo Elasticity & Margin Impact",
+    severity: "Medium",
+    businessImpact: "Relying heavily on discount-driven traffic risks permanently anchoring customer price expectations.",
+    supportingMetrics: `${overallStats.discountRate.toFixed(2)}% avg discount supporting a ${formatCurrency(overallStats.avgTransactionValue)} ATV.`,
+    recommendation: "Shift promotional strategy from blanket discounts to targeted loyalty rewards.",
+    confidenceLevel: "High"
+  });
 
-  trends.push(`**Operational Supply Line Risk**: Overall inventory availability stands at a **${overallStats.stockoutLevel}** risk level. High-frequency item depletion in key regions is actively dampening top-line conversion and driving purchase frustration.`);
+  trends.push({
+    title: "Operational Supply Line Risk",
+    severity: overallStats.stockoutLevel === "High" ? "Critical" : overallStats.stockoutLevel === "Medium" ? "High" : "Low",
+    businessImpact: "High-frequency item depletion in key regions is actively dampening top-line conversion.",
+    supportingMetrics: `Inventory availability stands at a ${overallStats.stockoutLevel} overall risk level.`,
+    recommendation: "Implement automated re-order triggers based on predictive sales velocity.",
+    confidenceLevel: "High"
+  });
 
   // Calculate Anomaly insights
-  const anomalies: string[] = [];
+  const anomalies: ExecutiveInsight[] = [];
 
   // Group by store for anomaly detection
   const storeSalesMapEntries = Array.from(storeSalesMap.entries());
@@ -288,19 +346,40 @@ export function calculateAnalyticalSummary(rows: MergedRetailRow[], overallStats
   // 1. Paradoxical Store: High footfall but exceptionally low conversion
   const conversionAnomalyStore = storeDataList.find(s => s.footfall > avgStoreFootfall * 0.8 && s.conversion < avgStoreConversion * 0.7);
   if (conversionAnomalyStore) {
-    anomalies.push(`**Footfall-Conversion Divergence**: Store **${conversionAnomalyStore.name}** logged strong visitor traffic (${conversionAnomalyStore.footfall.toLocaleString()} visits) but converted at only **${conversionAnomalyStore.conversion.toFixed(2)}%** (more than 30% below average). This identifies a critical disconnect in localized inventory matching, queue lengths, or service staff scaling.`);
+    anomalies.push({
+      title: "Footfall-Conversion Divergence",
+      severity: "High",
+      businessImpact: `Store ${conversionAnomalyStore.name} is failing to convert organic footfall, resulting in significant missed revenue.`,
+      supportingMetrics: `${conversionAnomalyStore.footfall.toLocaleString()} visits with only ${conversionAnomalyStore.conversion.toFixed(2)}% conversion (vs avg ${avgStoreConversion.toFixed(2)}%).`,
+      recommendation: "Investigate localized inventory matching, queue lengths, or service staff scaling.",
+      confidenceLevel: "High"
+    });
   }
 
   // 2. High Return Anomaly
   const worstReturnCategory = categoriesReturns[0];
   if (worstReturnCategory && worstReturnCategory.returnRate > 5) {
-    anomalies.push(`**High Product Returns Deficit**: The **${worstReturnCategory.category}** product segment exhibits an elevated post-purchase return rate of **${worstReturnCategory.returnRate.toFixed(1)}%**, which has leaked **${formatCurrency(worstReturnCategory.returnAmount)}** back to buyers. This return volume is significantly above industry norms and requires immediate product quality or catalog labeling audits.`);
+    anomalies.push({
+      title: "High Product Returns Deficit",
+      severity: "Critical",
+      businessImpact: `The ${worstReturnCategory.category} category is leaking significant net sales back to buyers.`,
+      supportingMetrics: `${worstReturnCategory.returnRate.toFixed(1)}% return rate representing ${formatCurrency(worstReturnCategory.returnAmount)} in lost sales.`,
+      recommendation: "Immediate product quality audit or catalog labeling review required.",
+      confidenceLevel: "High"
+    });
   }
 
   // 3. Margin Leakage Anomaly
   const worstDiscountCategory = categoriesDiscounts[0];
   if (worstDiscountCategory && worstDiscountCategory.discountRate > 12) {
-    anomalies.push(`**Markdown Dilution Vulnerability**: Gross margins in the **${worstDiscountCategory.category}** category are facing severe margin erosion, with a promotional markdown rate of **${worstDiscountCategory.discountRate.toFixed(1)}%**. High markdowns are failing to trigger proportional volume growth, signifying a risk of margin leakage without transactional upside.`);
+    anomalies.push({
+      title: "Markdown Dilution Vulnerability",
+      severity: "Medium",
+      businessImpact: `Gross margins in ${worstDiscountCategory.category} are eroding without sufficient transactional volume upside.`,
+      supportingMetrics: `${worstDiscountCategory.discountRate.toFixed(1)}% promotional markdown rate.`,
+      recommendation: "Re-evaluate promotional pricing strategy and shift to targeted discounts.",
+      confidenceLevel: "Medium"
+    });
   }
 
   // 4. Stockout Induced Underperformance Anomaly
@@ -315,11 +394,25 @@ export function calculateAnalyticalSummary(rows: MergedRetailRow[], overallStats
   });
 
   if (stockoutAffectedStore) {
-    anomalies.push(`**Supply-Fulfillment Bottleneck**: Store **${stockoutAffectedStore.name}** is operating at a target deficit of **${formatCurrency(stockoutAffectedStore.targetSales - stockoutAffectedStore.netSales)}** (${stockoutAffectedStore.achievement.toFixed(1)}% achievement). This underperformance is directly correlated with localized supply chain disruptions, as the store resides in a region experiencing a **${regionsStockout[0]?.stockoutRatio.toFixed(1)}%** stockout risk.`);
+    anomalies.push({
+      title: "Supply-Fulfillment Bottleneck",
+      severity: "Critical",
+      businessImpact: `Localized supply chain disruptions are directly causing target deficits at ${stockoutAffectedStore.name}.`,
+      supportingMetrics: `${stockoutAffectedStore.achievement.toFixed(1)}% target achievement in a region with >15% stockout risk.`,
+      recommendation: "Expedite emergency replenishment to this region and optimize buffer stock.",
+      confidenceLevel: "High"
+    });
   }
 
   if (anomalies.length === 0) {
-    anomalies.push("**Stable Operations Baseline**: No major performance anomalies detected across the current filters. Store conversion metrics, discount ratios, and product returns conform closely to corporate benchmark profiles.");
+    anomalies.push({
+      title: "Stable Operations Baseline",
+      severity: "Low",
+      businessImpact: "Operations are stable, minimizing unexpected margin erosion.",
+      supportingMetrics: "All operational metrics within standard deviation.",
+      recommendation: "Maintain current operational cadences.",
+      confidenceLevel: "High"
+    });
   }
 
   // Calculate detailed Target Miss Explanation

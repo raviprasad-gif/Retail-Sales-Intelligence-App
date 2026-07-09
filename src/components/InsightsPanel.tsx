@@ -4,8 +4,59 @@
  */
 
 import React, { useState } from "react";
-import { AnalyticsSummary } from "../utils/insights";
-import { Sparkles, Brain, AlertTriangle, Lightbulb, TrendingUp, Store, ChevronRight, CheckCircle, Flame, Target, DollarSign } from "lucide-react";
+import { AnalyticsSummary, ExecutiveInsight } from "../utils/insights";
+import { Sparkles, Brain, AlertTriangle, Lightbulb, TrendingUp, Store, ChevronRight, CheckCircle, Flame, Target, DollarSign, Activity } from "lucide-react";
+
+// Helper component for Executive Insights
+const InsightCard: React.FC<{ insight: ExecutiveInsight }> = ({ insight }) => {
+  const getSeverityColors = (severity: string) => {
+    switch (severity) {
+      case "Critical": return "bg-[#C62828]/10 text-[#C62828] border-[#C62828]/20";
+      case "High": return "bg-[#E65100]/10 text-[#E65100] border-[#E65100]/20";
+      case "Medium": return "bg-[#F9A825]/10 text-[#F9A825] border-[#F9A825]/20";
+      default: return "bg-[#1F4E79]/10 text-[#1F4E79] border-[#1F4E79]/20";
+    }
+  };
+
+  const severityColors = getSeverityColors(insight.severity);
+
+  return (
+    <div className="bg-white dark:bg-[#1E1E1E] rounded-xl border border-[#E5E7EB] dark:border-[#2D2D2D] shadow-sm overflow-hidden flex flex-col">
+      <div className="p-3 border-b border-[#E5E7EB] dark:border-[#2D2D2D] flex items-center justify-between bg-slate-50 dark:bg-zinc-800/50">
+        <h4 className="font-bold text-xs text-[#1F2937] dark:text-white flex items-center gap-2">
+          {insight.severity === "Critical" ? <AlertTriangle className="w-3.5 h-3.5 text-[#C62828]" /> : <Activity className="w-3.5 h-3.5 text-[#1F4E79]" />}
+          {insight.title}
+        </h4>
+        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border ${severityColors}`}>
+          {insight.severity}
+        </span>
+      </div>
+      <div className="p-3.5 space-y-3 text-xs">
+        <div>
+          <span className="block text-[10px] uppercase font-bold text-[#6B7280] dark:text-[#A0AEC0] tracking-wider mb-1">Business Impact</span>
+          <p className="text-[#1F2937] dark:text-gray-300 font-medium">{insight.businessImpact}</p>
+        </div>
+        <div className="bg-slate-50 dark:bg-zinc-900/50 p-2 rounded border border-[#E5E7EB] dark:border-[#2D2D2D]">
+          <span className="block text-[10px] uppercase font-bold text-[#6B7280] dark:text-[#A0AEC0] tracking-wider mb-0.5">Supporting Metrics</span>
+          <p className="text-[#1F4E79] dark:text-blue-400 font-mono text-[11px] font-semibold">{insight.supportingMetrics}</p>
+        </div>
+        <div>
+          <span className="block text-[10px] uppercase font-bold text-[#6B7280] dark:text-[#A0AEC0] tracking-wider mb-1">Recommendation</span>
+          <p className="text-[#2E7D32] dark:text-emerald-400 font-medium flex items-start gap-1.5">
+            <CheckCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+            <span>{insight.recommendation}</span>
+          </p>
+        </div>
+      </div>
+      <div className="px-3 py-2 bg-slate-50 dark:bg-zinc-800/30 border-t border-[#E5E7EB] dark:border-[#2D2D2D] mt-auto">
+        <span className="text-[10px] text-[#6B7280] dark:text-[#A0AEC0] font-medium flex items-center gap-1.5">
+          <Brain className="w-3 h-3" />
+          Confidence: {insight.confidenceLevel}
+        </span>
+      </div>
+    </div>
+  );
+};
 import { formatCurrency, formatPercent } from "../utils/excel";
 import { FilterState, KPIStats } from "../types";
 
@@ -399,16 +450,9 @@ Tone: Professional, analytical, executive-ready, highly competent. Avoid any cli
                     Longitudinal trajectory analysis extracted from current segment filters.
                   </p>
                 </div>
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {summary.trends.map((trend, i) => (
-                    <div key={i} className="p-3.5 bg-white dark:bg-[#1E1E1E] rounded-lg border border-[#E5E7EB]/70 dark:border-[#2D2D2D]/60 text-xs flex gap-3 items-start shadow-2xs hover:border-[#1F4E79]/50 dark:hover:border-zinc-500 transition-colors">
-                      <div className="p-1.5 bg-[#1F4E79]/10 text-[#1F4E79] dark:text-[#A0AEC0] rounded-md shrink-0">
-                        <TrendingUp className="w-4 h-4" />
-                      </div>
-                      <div className="text-[#6B7280] dark:text-[#A0AEC0] leading-relaxed mt-0.5">
-                        {renderMarkdown(trend)}
-                      </div>
-                    </div>
+                    <InsightCard key={i} insight={trend} />
                   ))}
                 </div>
               </div>
@@ -425,33 +469,10 @@ Tone: Professional, analytical, executive-ready, highly competent. Avoid any cli
                     Automated outlier detection flagging efficiency deficits, promotional dilution, or return leakage.
                   </p>
                 </div>
-                <div className="grid grid-cols-1 gap-3">
-                  {summary.anomalies.map((anomaly, i) => {
-                    const isStable = anomaly.startsWith("**Stable");
-                    return (
-                      <div
-                        key={i}
-                        className={`p-3.5 rounded-lg border text-xs flex gap-3 items-start shadow-2xs transition-colors ${
-                          isStable
-                            ? "bg-white dark:bg-[#1E1E1E] border-[#E5E7EB]/70 dark:border-[#2D2D2D]/60"
-                            : "bg-[#C62828]/5 dark:bg-[#C62828]/5 border-red-100 dark:border-red-900/30 hover:border-red-300 dark:hover:border-red-800"
-                        }`}
-                      >
-                        <div
-                          className={`p-1.5 rounded-md shrink-0 ${
-                            isStable
-                              ? "bg-slate-100 text-slate-600 dark:bg-zinc-800 dark:text-zinc-400"
-                              : "bg-[#C62828]/10 text-[#C62828]"
-                          }`}
-                        >
-                          {isStable ? <CheckCircle className="w-4 h-4" /> : <AlertTriangle className="w-4 h-4" />}
-                        </div>
-                        <div className="text-[#6B7280] dark:text-[#A0AEC0] leading-relaxed mt-0.5">
-                          {renderMarkdown(anomaly)}
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {summary.anomalies.map((anomaly, i) => (
+                    <InsightCard key={i} insight={anomaly} />
+                  ))}
                 </div>
               </div>
             )}

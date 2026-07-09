@@ -81,7 +81,10 @@ export const KPICard: React.FC<KPICardProps> = ({
           <span className="text-[11px] font-semibold text-[#6B7280] dark:text-[#A0AEC0] uppercase tracking-wider block truncate mb-1">
             {title}
           </span>
-          <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1F2937] dark:text-white font-sans">
+          <h3 
+            className="text-2xl sm:text-3xl font-bold tracking-tight text-[#1F2937] dark:text-white font-sans truncate"
+            title={value.toString()}
+          >
             {value}
           </h3>
         </div>
